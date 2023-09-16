@@ -1,67 +1,63 @@
 // ==UserScript==
 // @name         imm trans
-// @version      0.1
+// @version      0.2
 // @include *
-// @description  imm trans but short enough for trivial audit
+// @description  alt+a to trigger. imm trans but short enough for trivial audit, it just calls google translate. Translate headers (all) and <p> (8 in each go). Google translate api url adpated from https://addons.mozilla.org/en-US/firefox/addon/translation-selected-text/?utm_content=addons-manager-reviews-link&utm_medium=firefox-browser&utm_source=firefox-browser which i find very useful. 
 // @run-at       document-start
-// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 (function() {
     'use strict';
     let domContentLoadedFlag = false;
-    let cnt = 0;
+    let cnt_now = -1;
 
        function translateText(text, callback) {
-        const apiKey = '';
-        const apiUrl = 'https://api.openai.com/v1/engines/text-davinci-003/completions';
-
-        GM_xmlhttpRequest({
-            method: 'POST',
-            url: apiUrl,
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            data: JSON.stringify({
-                prompt: `Translate the following English text to Chinese:\n\n"${text}"\n\nTranslation:`,
-                max_tokens: 1000, // Adjust as needed
-            }),
-            onload: function(response) {
-                const translation = JSON.parse(response.responseText).choices[0].text;
-                callback(translation);
-            }
-        });
+       var translation_promise = function(){
+           const url = "https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&dt=bd&dj=1&sl=auto";
+           return fetch(url + "&tl=en&q=" + encodeURIComponent(text)).then(
+		   r => r.ok ? r.json().then(j => j.sentences.map(s => s.trans).join("")) : "Error: " + r.statusText,
+		   e => "Error: " + e.message);
+       }
+        translation_promise().then(callback);
     }
 
 
 
     function processParagraphs() {
-        //console.log('?');
-        const paragraphs = document.querySelectorAll('p, h1, h2');
+        if (cnt_now<=0){
+            const paragraphs = document.querySelectorAll('h1, h2, h3, h4');
 
-        //paragraphs.forEach(paragraph => {
-        //    const originalText = paragraph.textContent;
-        //    const placeholderTranslation = 'Placeholder Translation'; // Replace with actual translation later
-        //    console.log(`Original Text: ${originalText}`);
-        //    console.log(`Translation: ${placeholderTranslation}`);
-        //    console.log('---'); // Separator between paragraphs
-        //    paragraph.innerHTML += "<br><u>my text</u><br>";
-        //});
-
-        for (const paragraph of paragraphs) {
-            const originalText = paragraph.textContent;
-            translateText(originalText, translation => {
-                console.log(`Original Text: ${originalText}`);
-                console.log(`Translation: ${translation}`);
-                console.log('---'); // Separator between paragraphs
-                paragraph.innerHTML += `<br><u>${translation}</u><br>`;
-            });
-            cnt++;
-            if (cnt>=8) {
-                break;
+            for (const paragraph of paragraphs) {
+                const originalText = paragraph.textContent;
+                translateText(originalText, translation => {
+                    //console.log(`Original Text: ${originalText}`);
+                    //console.log(`Translation: ${translation}`);
+                    //console.log('---');
+                    paragraph.innerHTML += `<span style='background-color:#f4c6f4 !important; color:black !important;'><br>▷${translation}▬<br><br>`;
+                });
             }
-        };
+            cnt_now = 0;
+        }
+
+            const paragraphs = document.querySelectorAll('p');
+            let cnt = 0;
+            let i = 0;
+            for (const paragraph of paragraphs) {
+                if (i<cnt_now){
+                    i++;
+                    continue;
+                }
+                const originalText = paragraph.textContent;
+                translateText(originalText, translation => {
+                    paragraph.innerHTML += `<span style='background-color:#fff4d9 !important; color:black !important;'><br>▷${translation}▬<br><br>`;
+                });
+                cnt++;
+                i++;
+                cnt_now++;
+                if (cnt>=8) {break;}
+            }
+
+
     }
 
 
@@ -74,5 +70,8 @@
             event.preventDefault(); // Prevent the default browser behavior
             processParagraphs();
         }
+    });
+})();
+
     });
 })();
