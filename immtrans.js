@@ -1,6 +1,8 @@
 // ==UserScript==
 // @name         imm trans
-// @version      0.2.1
+// @namespace tiny-tiny-imm-trans
+// @license MIT
+// @version      0.2.2
 // @include *
 // @description  alt+a to translate page, alt+b to translate input, see comments below. Google translate api call adpated from https://addons.mozilla.org/en-US/firefox/addon/translation-selected-text/?utm_content=addons-manager-reviews-link&utm_medium=firefox-browser&utm_source=firefox-browser which i find very useful.
 // @run-at       document-start
@@ -39,24 +41,25 @@
             cnt_now = 0;
         }
 
-            const paragraphs = document.querySelectorAll('p');
-            let cnt = 0;
-            let i = 0;
-            for (const paragraph of paragraphs) {
-                if (i<cnt_now){
-                    i++;
-                    continue;
-                }
-                const originalText = paragraph.textContent;
-                translateText("en", originalText, translation => {
-                    paragraph.innerHTML += `<span style='background-color:#fff4d9 !important; color:black !important;'><br>▷${translation}▬<br><br>`;
-                });
-                cnt++;
+        const paragraphs = document.querySelectorAll('p, div.content, div.commentthread_comment_text');
+        let cnt = 0;
+        let i = 0;
+        console.log(paragraphs.length);
+        for (const paragraph of paragraphs) {
+            if (i<cnt_now){
                 i++;
-                cnt_now++;
-                if (cnt>=8) {break;}
+                continue;
             }
-
+            const originalText = paragraph.textContent.trim();
+            if (originalText=='') {i++; continue;}
+            translateText("en", originalText, translation => {
+                paragraph.innerHTML += `<span style='display: block !important; background-color:#fff4d9 !important; color:black !important;'><br>▷${translation}▬<br><br>`;
+            });
+            cnt++;
+            i++;
+            cnt_now++;
+            if (cnt>=8) {return;}
+        }
 
     }
 
@@ -77,17 +80,17 @@
     });
     document.addEventListener('keydown', function(event) {
         // Translate whole page.
-	// At first trigger, translate h1 through h4 and first 8 p tags. 
-	// Afterwards, translate 8 more paragraphs at each time. 
+	// At first trigger, translate h1 through h4 and first 8 p tags.
+	// Afterwards, translate 8 more paragraphs at each time.
         if (event.altKey && event.key === 'a' && domContentLoadedFlag) {
             event.preventDefault(); // Prevent the default browser behavior
             processParagraphs();
         }
     });
     document.addEventListener('keydown', function(event) {
-        // Translate input: the input is prefix with the target language code, 
-	// e.g. "en my text" for translating to English (original lang 
-	// is up to auto detection). This prefix will be stripped. 
+        // Translate input: the input is prefix with the target language code,
+	// e.g. "en my text" for translating to English (original lang
+	// is up to auto detection). This prefix will be stripped.
 	// FIXME: prompt failure when timeout, e.g. cn is not a valid prefix.
         if (event.altKey && event.key === 'b' && domContentLoadedFlag) {
             event.preventDefault(); // Prevent the default browser behavior
