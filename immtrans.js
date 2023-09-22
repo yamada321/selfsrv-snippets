@@ -2,7 +2,7 @@
 // @name         imm trans
 // @namespace tiny-tiny-imm-trans
 // @license MIT
-// @version      0.2.2
+// @version      0.2.3
 // @include *
 // @description  alt+a to translate page, alt+b to translate input, see comments below. Google translate api call adpated from https://addons.mozilla.org/en-US/firefox/addon/translation-selected-text/?utm_content=addons-manager-reviews-link&utm_medium=firefox-browser&utm_source=firefox-browser which i find very useful.
 // @run-at       document-start
@@ -12,6 +12,7 @@
     'use strict';
     let domContentLoadedFlag = false;
     let cnt_now = -1;
+    let mouseX, mouseY;
 
     function translateText(to_lang, text, callback) {
        var translation_promise = function(){
@@ -25,9 +26,9 @@
 
 
 
-    function processParagraphs() {
-        if (cnt_now<=0){
-            const paragraphs = document.querySelectorAll('h1, h2, h3, h4');
+    function processParagraphs(has_selector, selected) {
+        if (cnt_now<=0 && has_selector==0){
+            const paragraphs = has_selector==0? document.querySelectorAll('h1, h2, h3, h4') : [selected];
 
             for (const paragraph of paragraphs) {
                 const originalText = paragraph.textContent;
@@ -41,12 +42,13 @@
             cnt_now = 0;
         }
 
-        const paragraphs = document.querySelectorAll('p, div.content, div.commentthread_comment_text');
+        const paragraphs = has_selector==0? document.querySelectorAll('p, div.content, div.commentthread_comment_text') : [selected];
+        ;
         let cnt = 0;
         let i = 0;
-        console.log(paragraphs.length);
+        //console.log(paragraphs.length);
         for (const paragraph of paragraphs) {
-            if (i<cnt_now){
+            if (has_selector==0 && i<cnt_now){
                 i++;
                 continue;
             }
@@ -75,8 +77,13 @@
     }
 
 
+
     window.addEventListener('DOMContentLoaded', function() {
         domContentLoadedFlag = true;
+    });
+    document.addEventListener('mousemove', function(event) {
+        mouseX = event.clientX;
+        mouseY = event.clientY;
     });
     document.addEventListener('keydown', function(event) {
         // Translate whole page.
@@ -84,7 +91,7 @@
 	// Afterwards, translate 8 more paragraphs at each time.
         if (event.altKey && event.key === 'a' && domContentLoadedFlag) {
             event.preventDefault(); // Prevent the default browser behavior
-            processParagraphs();
+            processParagraphs(0,0);
         }
     });
     document.addEventListener('keydown', function(event) {
@@ -95,6 +102,14 @@
         if (event.altKey && event.key === 'b' && domContentLoadedFlag) {
             event.preventDefault(); // Prevent the default browser behavior
             trans_input();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        // Translate stuff under mouse hover
+        if (event.altKey && event.key === 'c' && domContentLoadedFlag) {
+            event.preventDefault(); // Prevent the default browser behavior
+            processParagraphs(1, document.elementFromPoint(mouseX, mouseY));
         }
     });
 })();
