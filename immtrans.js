@@ -4,7 +4,7 @@
 // @license MIT
 // @version      0.2.3
 // @include *
-// @description  alt+a to translate page, alt+b to translate input, see comments below. Google translate api call adpated from https://addons.mozilla.org/en-US/firefox/addon/translation-selected-text/?utm_content=addons-manager-reviews-link&utm_medium=firefox-browser&utm_source=firefox-browser which i find very useful.
+// @description  alt+a to translate page, alt+b to translate input(see comments in bottom of code), alt+c to translate stuff under mouse position. Google translate api call adpated from https://addons.mozilla.org/en-US/firefox/addon/translation-selected-text/?utm_content=addons-manager-reviews-link&utm_medium=firefox-browser&utm_source=firefox-browser which i find very useful.
 // @run-at       document-start
 // ==/UserScript==
 
